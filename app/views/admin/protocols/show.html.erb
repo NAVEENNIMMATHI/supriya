@@ -1,0 +1,52 @@
+<div class="page-header">
+  <div class="page-title">
+    <nav class="breadcrumb">
+      <%= link_to "Medication lists", admin_protocols_path, class: "#{active_controller?("admin/protocols")}" %>
+      <i class="fas fa-chevron-right"></i> <%= @protocol.name %>
+    </nav>
+    <h1 class="page-title">
+      <%= @protocol.name %>
+    </h1>
+  </div>
+  <nav class="page-nav">
+    <% if current_admin.accessible_organizations(:manage).any? || current_admin.power_user? %>
+      <%= link_to "Edit medication list", edit_admin_protocol_path(@protocol), class: "btn btn-sm btn-outline-primary", id: "Edit medication list" %>
+      <%= link_to new_admin_protocol_protocol_drug_path(@protocol), class: "btn btn-sm btn-success", id: "Add medication" do %>
+        <i class="fas fa-plus mr-1"></i> Medication
+      <% end %>
+    <% end %>
+  </nav>
+</div>
+
+<h3 class="mt-4">Default follow-up period</h3>
+<p>Set the default period shown in the Android app for creating follow-up visit reminders. Often this is "28 days" to ensure patients visit on the same day of the week, within 1 month.</p>
+<p id="Follow up days">
+  <strong>Follow-up days:</strong> <%= @protocol.follow_up_days %> days  <%= link_to "EDIT", edit_admin_protocol_path(@protocol), class: "ml-4", id: "Edit days" %>
+</p>
+
+<h3 class="mt-5">Medications list</h3>
+<p class="mb-4">Include common anti-hypertensive (and diabetes) medications as per the regional protocol and also commonly dispensed alternative medications and dosages. Try to keep the list to &lt;10 medications, if possible.</p>
+
+<% @protocol_drugs.sort_by(&:name).each do |protocol_drug| %>
+  <div class="card" name="<%= protocol_drug.name %>">
+    <div class="row">
+      <div class="col-md-4">
+        <h5 class="mb-1"><%= protocol_drug.name %> <%= protocol_drug.dosage %></h5>
+      </div>
+      <div class="col-md-3 mb-2"><i class="fas fa-pills light mr-1"></i>
+        <span class="text-secondary">RXnorm Code:</span>
+        <% if protocol_drug.rxnorm_code.present? %>
+          <%= protocol_drug.rxnorm_code %>
+        <% else %>
+          <span class="light"><i class="fas fa-angle-left"></i>NONE<i class="fas fa-angle-right"></i></span>
+        <% end %>
+      </div>
+      <div class="col-5 text-md-right">
+        <%= link_to 'Edit', edit_admin_protocol_protocol_drug_path(@protocol, protocol_drug), class: "btn btn-sm btn-outline-primary" %>
+        <%= link_to([:admin, @protocol, protocol_drug], method: :delete, data: { confirm: "Are you sure you want to delete #{protocol_drug.name}?" }, class: "btn btn-sm btn-outline-danger") do %>
+          <i class="fas fa-trash-alt"></i>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

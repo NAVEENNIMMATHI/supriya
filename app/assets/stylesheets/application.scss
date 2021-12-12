@@ -1,0 +1,754 @@
+// Universal variables
+@import "partials/variables";
+
+// Third-party imports
+@import "bootstrap";
+@import 'bootstrap-select';
+@import "tablesort/tablesort";
+@import "bootstrap-datepicker";
+
+// Local imports
+@import "partials/dashboard";
+@import "partials/graphs";
+@import "partials/navigation";
+@import "partials/overdue";
+@import "partials/resources";
+@import "partials/snapshots";
+@import "partials/search";
+@import "partials/spacing";
+@import "partials/typeahead_search";
+@import "partials/reports";
+@import "partials/admin/access_tree";
+@import "partials/admin/form";
+@import "partials/admin/index";
+@import "partials/admin/show";
+
+body {
+    font-size: 15px;
+    font-family: $font-condensed;
+    background: $grey-lightest;
+    overflow: scroll;
+}
+
+h1, h1.btn {
+    font-size: 28px;
+    font-family: "Roboto", sans-serif;
+    font-weight: bold;
+    padding-bottom: 8px;
+
+    .fa-chevron-right {
+        position: relative;
+        top: -3px;
+        color: rgba(0,0,0,0.2);
+        padding: 0 6px;
+        font-size: 70%;
+    }
+}
+
+h2 {
+    font-size: 22px;
+    font-weight: bold;
+    font-family: "Roboto", sans-serif;
+    margin-bottom: 0.5em;
+}
+
+h3 {
+    font-size: 20px;
+    color: $grey-darkest;
+    font-weight: 700;
+    font-family: "Roboto", sans-serif;
+    margin-bottom: 0.5em;
+}
+
+h4 {
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    font-size: 13px;
+    margin: 0;
+    padding-bottom: 4px;
+    margin-bottom: 1em;
+}
+
+h5 {
+    font-size: 16px;
+    font-family: $font-condensed;
+    margin: 0;
+}
+
+h6 {
+    font-family: $font-condensed;
+    font-weight: normal;
+    font-size: 100%;
+    margin: 0 0 0.2em 0;
+}
+
+h6.bold {
+    font-weight: bold;
+}
+
+a.link-add {
+    color: $green;
+    display: block;
+}
+
+.btn-outline.dropdown-toggle {
+    border: 1px solid $blue-mid !important;
+    background: #fff !important;
+    color: $blue !important;
+}
+
+nav.secondary-nav a {
+    color: $grey-dark;
+    border-bottom: 1px solid $grey-light;
+}
+
+nav.secondary-nav a:last-child {
+    border: none;
+}
+
+nav.secondary-nav a.active {
+    font-weight: bold;
+}
+
+.secondary-nav-filters {
+    margin-bottom: 32px;
+
+    .dropdown-toggle {
+        width: 100%;
+        border-top: 1px solid $grey-light;
+        text-align: left;
+        padding: 8px 16px;
+    }
+
+    h4 {
+        margin: 24px 0 8px 0;
+    }
+
+    input {
+        margin-right: 8px;
+    }
+
+    label {
+        display: block;
+        border-top: 1px solid $grey-light;
+        padding: 8px 16px 4px 16px;
+        font-weight: normal;
+        line-height: 1;
+    }
+}
+
+.light {
+    color: $grey-mid !important;
+}
+
+.bp-uncontrolled {
+    color: $red;
+}
+
+.patient-new {
+    color: $green;
+}
+
+.mobile {
+    display: none;
+}
+
+.desktop {
+    display: block;
+}
+
+.none {
+    background: rgba(0,0,0,0.05);
+    padding: 24px;
+    text-align: center;
+    color: rgba(0,0,0,0.5);
+    border-radius: 4px;
+}
+
+.tooltip-inner {
+    font-family: $font-condensed;
+    padding: 6px 8px;
+    max-width: 200px;
+}
+
+.tooltip-inner-wide {
+  font-family: $font-condensed;
+  padding: 6px 8px;
+  max-width: 400px;
+}
+
+#app-footer {
+    font-size: 85%;
+    padding: 16px 0 32px 0;
+    margin-top: 32px;
+    text-align: right;
+    border-top: 1px solid $grey-lightest;
+}
+
+.form-no-label label {
+    display: none;
+}
+
+.form-label-light {
+    font-weight: normal;
+}
+
+.info {
+    color: $green;
+}
+
+.info i {
+    position: relative;
+    top: 2px;
+    font-size: 140%;
+    margin-right: 4px;
+}
+
+.login-logo img {
+    width: 50px;
+    height: 50px;
+}
+
+.user {
+    width: 32px;
+    height: 32px;
+    background: $blue-light;
+    border-radius: 100px;
+}
+
+section {
+    margin-bottom: 1em;
+}
+
+table {
+    width: 100%;
+    line-height: 1.2;
+}
+
+.text-grey { color: $grey-dark; }
+.text-red { color: $red; }
+.text-green { color: $green; }
+.text-yellow { color: $yellow-dark; }
+.text-info { color: #30B496; }
+
+footer {
+    padding: 2em 0 1em 0;
+}
+
+.null {
+    color: $grey-light  ;
+}
+
+.navbar.fixed-top {
+  position: sticky;
+}
+
+.sub-nav {
+  padding-bottom: 16px;
+  line-height: 1;
+  margin-top: -32px !important;
+  
+  .container {
+    margin-bottom: 36px;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+}
+
+.sub-nav-link {
+  display: inline-block;
+  padding: 18px 0;
+  margin-right: 16px;
+  font-size: 16px;
+  color: $grey-darkest;
+  text-decoration: none !important;
+  
+  &:hover {
+    border-bottom: 2px solid black;
+    color: $grey-dark;
+  }
+  
+  &.active {
+    border-bottom: 2px solid $red;
+    color: $red;
+    font-weight: bold;
+  }
+}
+
+.navbar .nav-item.active a,
+.navbar .nav-item a.active {
+    font-weight: bold;
+}
+
+@include media-breakpoint-down(lg) {
+    main.container {
+        margin: 16px 0 0 0 !important;
+    }
+    div.container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .mobile {
+        display: inherit;
+    }
+    .desktop {
+        display: none;
+    }
+    
+    button.navbar-toggler {
+        font-size: 15px;
+        padding: 8px 16px;
+    }
+    .dropdown-item {
+        font-size: 14px;
+    }
+    h1 {
+        font-size: 28px;
+    }
+    .navbar .nav-link,
+    .dropdown-item {
+        font-size: 18px;
+    }
+}
+
+@include media-breakpoint-down(md) {
+    .navbar {
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      
+      #navbarNav, 
+      .navbar-nav {
+        display: inline;
+      }
+      
+      .nav-item,
+      .nav-link {
+        display: inline-block;
+      }
+      
+      .nav-link {
+        padding: 6px 10px 6px 0;
+      }
+      
+      .nav-item .dropdown-menu {
+        position: fixed;
+        top: 58px;
+        left: 0;
+        width: 92%;
+        left: 4%;
+        box-shadow: 0 0 0 10px rgba(0,0,0,0.5);
+      }
+    }
+    
+    .sub-nav {
+      margin: -16px -16px 0 -16px !important;
+      line-height: 1.4;
+      
+      .container {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+      }
+    }
+}
+
+@include media-breakpoint-up(lg) {
+    main.container {
+        margin-top: 32px !important;
+    }
+        
+    .container div.container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .navbar {
+        border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .table-compact .row-title a {
+        width: 100% !important;
+        overflow: auto;
+        text-overflow: inherit;
+    }
+    .col-lg-3 .dropdown .btn {
+        width: 100%;
+    }
+    .navbar .nav-link,
+    .dropdown-item {
+        font-size: 18px;
+        margin-right: 6px;
+    }
+    .sub-nav-link {
+      padding: 18px 0 10px 0;
+      margin-bottom: 16px;
+    }
+}
+
+h6.dropdown-header {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 1em;
+    font-size: 75%;
+}
+
+.main-menu-icon {
+    min-width: 3em;
+    text-align: center;
+    color: $blue;
+}
+
+.dropdown .active i {
+  color: #fff;
+}
+
+.light {
+    color: #ddd;
+}
+
+.divider {
+    padding: 0 5px;
+}
+
+.btn.disabled {
+    background: $grey-lightest;
+    border-color: $grey-mid;
+    color: $grey-mid;
+}
+
+.btn-phone {
+    letter-spacing: 0.2em;
+}
+
+.btn-outline-primary {
+    border-color: #A3C6EA;
+    background: #fff;
+}
+
+.btn-outline-danger {
+    border-color: #FFD6DD;
+    background: #fff;
+}
+
+.btn-outline-success {
+    border-color: #C5E4D1;
+    background: #fff;
+}
+
+.btn-outline-success {
+    border-color: #C5E4D1;
+    background: #fff;
+}
+
+.btn-default {
+    text-transform: uppercase;
+    color: $blue;
+    letter-spacing: 0.05em;
+    font-size: 90%;
+    padding-right: 8px;
+    padding-left: 8px;
+}
+
+.btn-info {
+  background: $blue-light;
+  border-color: $blue-light;
+  color: $blue;
+
+  &:hover {
+    background: $blue;
+    border-color: $blue;
+    color: #FFF;
+  }
+}
+
+.btn-phone {
+    letter-spacing: 0.15em;
+    min-width: 12em;
+}
+
+label {
+    font-weight: 600;
+}
+
+table span.label {
+    min-width: 95%;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
+    font-size: 85%;
+}
+
+.nowrap a,
+.nowrap {
+    white-space: nowrap;
+}
+
+.page-header{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  .page-title {
+    flex-grow: 1;
+  }
+
+  .page-nav .btn {
+    margin-bottom: 0.5rem;
+  }
+}
+
+nav.navbar {
+    background: #fff !important;
+}
+
+span.inactive {
+  text-decoration: line-through;
+}
+
+.sync_approval_status {
+  span {
+    padding: 5px 10px;
+    border-radius: 5px;
+  }
+  .requested {
+    background-color: theme-color("warning");
+  }
+
+  .allowed {
+    background-color: theme-color("success");
+    color: white;
+  }
+  .denied{
+    background-color: theme-color("danger");
+    color: white;
+  }
+}
+
+.sync_approval_status_reason {
+  max-width: 100px;
+}
+
+.card-cell-header {
+  @extend .text-muted;
+  @extend .small;
+
+  @include media-breakpoint-up(lg) {
+    display: none;
+  }
+}
+
+.card-row {
+    border-top: 1px solid $grey-lightest;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.approval-reason {
+    display: block;
+    color: $grey-mid;
+    text-transform: uppercase;
+    font-size: $font-small;
+    letter-spacing: 0.1em;
+}
+
+.zero {
+  color: #ddd;
+}
+
+.term {
+    font-weight: bold;
+    font-style: italic;
+}
+
+.card {
+    border: none;
+    background: #fff;
+    margin: 8px 0 16px 0;
+    padding: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+@include media-breakpoint-down(lg) {
+  .card {
+    height: auto !important;
+  }
+}
+
+
+.card-footer {
+    margin: 0 -20px -20px -20px;
+    background: $offwhite;
+}
+
+.card-date {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    color: $grey-mid;
+    text-align: right;
+}
+
+.user-row {
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding: 8px 0;
+}
+
+.footnotes {
+    margin-top: 2em;
+    padding-right: 40px;
+
+    li {
+        margin-top: 0.5em;
+    }
+}
+
+.user-row .event,
+.user-row .event a {
+    color: $grey-dark;
+}
+
+.filter-tags:not(:empty) {
+    font-size: 22px;
+    text-transform: none;
+    letter-spacing: normal;
+    display: block;
+
+    .badge-pill.badge-secondary {
+        background: $blue;
+        margin-bottom: 12px;
+        font-weight: normal;
+    }
+}
+
+.active-filters-mobile {
+  text-align: center;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.02);
+  padding: 10px 16px;
+}
+
+.filters-modal-toggle {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.password-toggle-button {
+	color: $blue;
+	bottom: 10px;
+	font-size: 14px;
+	height: 24px;
+	left: 425px;
+	line-height: 0;
+	padding: 0px;
+	position: absolute;
+	width: 47px;
+	z-index: 10;
+}
+
+.password-form {
+	position: relative;
+
+	.form-group {
+		margin-bottom: 7px
+	}
+}
+
+.password-input {
+	height: 44px;
+	width: 480px;
+}
+
+.error-message {
+    color: red;
+    &.hidden {
+        display: none;
+    }
+}
+
+.password-prompt {
+	color: $grey-dark;
+	margin-bottom: 4px;
+}
+
+.password-validation-checklist {
+	color: $grey-mid;
+	list-style-type: none;
+	padding-left: 0;
+
+	li {
+		margin-bottom: 4px;
+	}
+
+	.completed {
+		color: black;
+		i {
+			color: $green-dark
+		}
+	}
+
+	.fa-check-circle {
+		height: 16px;
+		margin-right: 8px;
+		width: 16px;
+	}
+}
+
+.password-submit {
+	font-size: 16px;
+	height: 43px;
+	width: 141px;
+}
+
+.error-body {
+    background-color: #F0F2F5;
+    color: #2E2F30;
+    display: flex;
+    justify-content: center;
+    font-family: Roboto, sans-serif;
+    line-height: 1.4;
+    margin: 84px 0px 0px 0px;
+    text-align: center;
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    a:link,
+    a:hover,
+    a:visited {
+        color: #0075EB;
+    }
+
+    img {
+        margin-bottom: 32px;
+        width: 80px;
+    }
+
+    .dialog {
+        background: #fff;
+        border-radius: 7px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        height: 320px;
+        padding: 40px;
+        width: 608px;
+    }
+
+    .title {
+        font-size: 36px;
+        font-weight: bold;
+        line-height: 1.4;
+        margin: 22px 0px;
+    }
+
+    .text {
+        margin: 22px 0px;
+        padding-bottom: 16px;
+    }
+
+    .return-link {
+        font-weight: bold;
+        letter-spacing: 2px;
+    }
+}

@@ -1,0 +1,37 @@
+en_IN:
+  facility_group: "district"
+  region_type:
+    state: state
+    district: district
+    block: block
+  helpers:
+    label:
+      facility:
+        name: "Name"
+        facility_type: "Facility Type *"
+        size: "Size *"
+        street_address: "House number and street"
+        village_or_colony: "Colony, village or ward"
+        zone: "Block *"
+        district: "District *"
+        state: "State *"
+        country: "Country *"
+      facility_group:
+        state: "State"
+      drug:
+        frequency:
+          one_per_day: "OD"
+          two_per_day: "BD"
+          three_per_day: "TDS"
+          four_per_day: "QDS"
+    submit:
+      facility:
+        create: "Save facility"
+        update: "Save facility"
+  activerecord:
+    facility:
+      facility_size:
+        community: "HWC/SC"
+        small: "PHC"
+        medium: "CHC"
+        large: "SDH/DH"

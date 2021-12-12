@@ -1,0 +1,40 @@
+<%= bootstrap_form_with(url: form_url, method: :get, layout: :horizontal, class: "mt-4") do |form| %>
+  <% html_select_options = { form: local_assigns[:form_id], onchange: "this.form.submit();" }.compact
+     searchable_select_options = html_select_options.merge(class: "selectpicker", data: {live_search: true}) %>
+  <div class="form-row">
+    <div id="district-selector" class="form-group col-md-3">
+      <%= form.select :district_slug,
+                      districts.order(:name).map { |district| [district.name, district.slug] },
+                      {
+                        hide_label: true,
+                        selected: selected_district&.slug,
+                        wrapper: false
+                      },
+                      searchable_select_options
+      %>
+    </div>
+    <div id="facility-selector" class="form-group col-md-5">
+      <%= form.select :facility_id,
+                      facilities.order(:name).map { |facility| [facility.label_with_district, facility.id] },
+                      {
+                          hide_label: true,
+                          include_blank: "All facilities",
+                          selected: selected_facility&.id,
+                          wrapper: false
+                      },
+                      searchable_select_options
+      %>
+    </div>
+    <div id="limit-selector" class="form-group col-md-2">
+      <%= form.select :per_page,
+                      ["20 per page", "50 per page"],
+                      {
+                          hide_label: true,
+                          selected: per_page,
+                      },
+                      html_select_options
+      %>
+    </div>
+  </div>
+  <%= form.submit "Filter", style: "display: none" %>
+<% end %>

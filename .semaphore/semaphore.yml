@@ -1,0 +1,41 @@
+version: v1.0
+name: Test simple-server
+agent:
+  machine:
+    type: e1-standard-8
+    os_image: ubuntu1804
+auto_cancel:
+  running:
+    when: "true"
+blocks:
+  - name: Tests
+    task:
+      env_vars:
+        - name: DATABASE_URL
+          value: "postgresql://postgres:@0.0.0.0:5432/myapp_test"
+        - name: RAILS_ENV
+          value: test
+        - name: TB_RSPEC_OPTIONS
+          value: "--profile"
+        - name: TB_RSPEC_FORMATTER
+          value: progress
+      secrets:
+        - name: sentry-release-auth-token
+        - name: semaphore-deploy-key
+      jobs:
+        - name: StandardRB
+          commands:
+            - checkout
+            - script/semaphore_setup
+            - "bundle exec standardrb"
+        - name: RSpec
+          parallelism: 8
+          commands:
+            - checkout
+            - script/semaphore_setup
+            - rspec_booster --job $SEMAPHORE_JOB_INDEX/$SEMAPHORE_JOB_COUNT
+promotions:
+  - name: Deploy
+    pipeline_file: deploy.yml
+    auto_promote:
+      when: (branch = 'master' AND result = 'passed') OR (tag =~ '^release-.*' AND result = 'passed')

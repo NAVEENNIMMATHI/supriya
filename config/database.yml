@@ -1,0 +1,23 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV['SIMPLE_SERVER_DATABASE_HOST'] %>
+  username: <%= ENV['SIMPLE_SERVER_DATABASE_USERNAME'] %>
+  password: <%= ENV['SIMPLE_SERVER_DATABASE_PASSWORD'] %>
+  database: <%= ENV['SIMPLE_SERVER_DATABASE_NAME'] %>
+
+development:
+  <<: *default
+  database: simple-server_development
+
+profiling:
+  <<: *default
+  database: simple-server_profiling
+
+test:
+  <<: *default
+  database: simple-server_test<%= ENV['TEST_ENV_NUMBER'] %>
+
+production:
+  <<: *default

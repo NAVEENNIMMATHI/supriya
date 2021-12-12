@@ -1,0 +1,2556 @@
+{
+  "swagger": "2.0",
+  "basePath": "/api/v4",
+  "produces": [
+    "application/json"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "info": {
+    "description": "# API spec for Simple Server\n## Sync APIs\nThis API spec documents the endpoints that the devices (that are offline to varying levels) will use to sync data. The sync end points will send and receive bulk (a list of) entities. Both sending and receiving can be batched with configurable batch-sizes to accommodate low network bandwidth situations.\n\n## Nesting resources\nThe APIs have been designed to provide an optimal balance between accuracy and simplicity. Some of the APIs (patients) will be nested, and some other (blood pressures) will be flat.\n\n## Sync Mechanism\nRefer to the [related ADR](https://github.com/simpledotorg/simple-server/blob/master/doc/arch/001-synchronization.md).\n\n## API Authentication\nThere are two types of authentication available to access different parts of the Simple API.\n- User Authentication - For medical professionals using the Simple App. Grants access to most of the Simple API\n  to read and write data for communities of patients.\n- Patient authentication - For individual patients. Grants access to read a patient's own data.\n\n### User Authentication\n\nA Simple client can make authenticated requests to the Simple API on behalf of a medical professional with the\nfollowing three required credentials:\n- API Access Token\n- User ID\n- Facility ID\n\nIn order to obtain these credentials, a Simple client can authenticate a user with the following steps. The\nclient will need the user's registered phone number to perform the authentication.\n1. Submit the users phone number to the [`POST /v4/users/find` endpoint](#tag/User/paths/~1users~1find/post). If\na user exists with this phone number, the response will return their id.\n2. Submit the user's id retreived in the previous step, along with the user's password to the\n[`POST v4/users/activate` endpoint](#tag/User/paths/~1users~1activate/post).\nThis will validate the user's password, and trigger an OTP to be sent to the user's phone number.\n3. Submit the user's id, their password, and the OTP (received after the previous step) to the\n[`POST v3/login` endpoint](#tag/User-Login/paths/~1login/post). If the submitted otp and password are valid,\nthis will return an access token that can be used to authenticate the user. The access token will remain valid\nuntil the user signs into another device.\n\nOn successful authentication, the client will receive a payload containing an API access token and some user\ninformation.\nThe following headers need to be attached to subsequent requests as shown below.\n- `Authorization: Bearer <access token>`\n- `X-User-Id: <user ID>`\n- `X-Facility-Id: <facility ID>` This is the id for either the registration facility of the user, or another\nfacility in their facility group.\n\n### Patient Authentication\nA Simple client can make authenticated requests to the Simple API on behalf of a patient with the following\ncredentials:\n- API Access Token\n- Patient ID\n\nIn order to obtain these credentials, a Simple client can authenticate a patient with the following steps. The\nclient will need the patient's BP Passport UUID to perform the authentication.\n1. Submit the patient's BP Passport UUID to the [`POST /v4/patients/activate` endpoint](#tag/Patient/paths/~1patient~1activate/post).\n   This will trigger an OTP message to be sent to the patient's registered phone number.\n2. Submit the patient's BP Passport UUID and OTP (received after the previous step) to the [`POST /v4/patients/login` endpoint](#tag/Patient/paths/~1patient~1login/post)\n\nOn successful authentication, the client will receive a payload containing an API access token and a patient ID.\nBoth of these data points need to be attached to subsequent requests as request headers as shown below.\n- `Authorization: Bearer <access token>`\n- `X-Patient-Id: <patient ID>`\n\nThe API access token will remain valid until the patient signs into another device.\n\nThe comprehensive list of authentication mechanisms used is provided below. It lists the specific details of\nusing access tokens and other request headers to authenticate with the API.\n",
+    "version": "v4",
+    "title": "Simple Server",
+    "x-logo": {
+      "url": "/assets/rtsl_logo-90ad9b477469fd15ef3b36063601e9857417cb3e336d8408226260297fa4fed9.png",
+      "backgroundColor": "#FFFFFF"
+    },
+    "contact": {
+      "email": "eng-backend@resolvetosavelives.org"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/simpledotorg/simple-server/blob/master/LICENSE"
+    }
+  },
+  "paths": {
+    "/analytics/overdue_list.csv": {
+      "get": {
+        "summary": "Downloads a CSV with the facility's overdue list",
+        "tags": [
+          "analytics"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV downloaded"
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      }
+    },
+    "/blood_sugars/sync": {
+      "post": {
+        "summary": "Syncs blood sugar data from device to server.",
+        "tags": [
+          "Blood Sugar"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "blood_sugars",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "blood_sugars": {
+                  "$ref": "#/definitions/blood_sugars"
+                }
+              },
+              "required": [
+                "blood_sugars"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "some, or no errors were found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "$ref": "#/definitions/errors"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      },
+      "get": {
+        "summary": "Syncs blood sugar data from server to device.",
+        "tags": [
+          "Blood Sugar"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "process_token",
+            "type": "string",
+            "format": "byte",
+            "description": "Token containing all the information needed to process batch requests from the user",
+            "in": "query"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of record to retrieve (a.k.a batch-size)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "blood sugar received",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "blood_sugars": {
+                  "$ref": "#/definitions/blood_sugars"
+                },
+                "process_token": {
+                  "$ref": "#/definitions/process_token"
+                }
+              },
+              "required": [
+                "blood_sugars",
+                "process_token"
+              ]
+            }
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      }
+    },
+    "/call_results/sync": {
+      "post": {
+        "summary": "Syncs call_result data from device to server.",
+        "tags": [
+          "Call Result"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "call_results",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "call_results": {
+                  "$ref": "#/definitions/call_results"
+                }
+              },
+              "required": [
+                "call_results"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "some, or no errors were found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "$ref": "#/definitions/errors"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      }
+    },
+    "/facility_teleconsultations/{facility_id}": {
+      "get": {
+        "summary": "Fetch a facility's teleconsultation phone number",
+        "tags": [
+          "Teleconsultation"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "facility_id",
+            "in": "path",
+            "type": "string",
+            "description": "Facility UUID",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Teleconsultation phone number is returned",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "teleconsultation_phone_number": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "teleconsultation_phone_numbers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "phone_number": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "phone_number"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "teleconsultation_phone_number",
+                "teleconsultation_phone_numbers"
+              ]
+            }
+          },
+          "401": {
+            "description": "User not authorized"
+          }
+        }
+      }
+    },
+    "/medications/sync": {
+      "get": {
+        "summary": "Syncs medication data from server to device.",
+        "tags": [
+          "Medication"
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "process_token",
+            "type": "string",
+            "format": "byte",
+            "description": "Token containing all the information needed to process batch requests from the user",
+            "in": "query"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "type": "integer",
+            "description": "Number of record to retrieve (a.k.a batch-size)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "returns medications",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "medications": {
+                  "$ref": "#/definitions/medications"
+                },
+                "process_token": {
+                  "$ref": "#/definitions/process_token"
+                }
+              },
+              "required": [
+                "medications",
+                "process_token"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/patient/activate": {
+      "post": {
+        "summary": "Request an OTP to be sent to a patient",
+        "tags": [
+          "Patient"
+        ],
+        "parameters": [
+          {
+            "name": "request_body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "passport_id": {
+                  "$ref": "#/definitions/uuid"
+                }
+              }
+            },
+            "description": "Patient's BP Passport UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient is found and an OTP is sent to their phone"
+          },
+          "404": {
+            "description": "Incorrect passport id"
+          }
+        }
+      }
+    },
+    "/patient/login": {
+      "post": {
+        "summary": "Log in a patient with BP Passport UUID and OTP",
+        "tags": [
+          "Patient"
+        ],
+        "parameters": [
+          {
+            "name": "request_body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "passport_id": {
+                  "$ref": "#/definitions/uuid"
+                },
+                "otp": {
+                  "$ref": "#/definitions/non_empty_string"
+                }
+              }
+            },
+            "description": "Patient's BP Passport UUID and OTP"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Correct OTP is submitted and API credentials are returned",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "patient": {
+                  "$ref": "#/definitions/login_patient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect BP Passport UUID or OTP"
+          }
+        }
+      }
+    },
+    "/patient": {
+      "get": {
+        "summary": "Fetch patient information",
+        "tags": [
+          "Patient"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "patient_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_PATIENT_ID",
+            "in": "header",
+            "type": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Patient information is returned",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "patient": {
+                  "$ref": "#/definitions/patient"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid patient ID header"
+          }
+        }
+      }
+    },
+    "/patients/lookup": {
+      "post": {
+        "summary": "Lookup a patient all their records synchronously given their full business identifier",
+        "tags": [
+          "Patient"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "string",
+                  "description": "Full identifier string of the BP Passport, or other supported identifier type"
+                }
+              },
+              "required": [
+                "identifier"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "patient lookup successful",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "patients": {
+                  "$ref": "#/definitions/lookup_patients"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No patients found with this identifier"
+          }
+        }
+      }
+    },
+    "/states": {
+      "get": {
+        "summary": "Lists available state names",
+        "tags": [
+          "States"
+        ],
+        "responses": {
+          "200": {
+            "description": "returns state names",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "states": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "description": "List of available state names"
+            }
+          }
+        }
+      }
+    },
+    "/facility_medical_officers/sync": {
+      "get": {
+        "summary": "Syncs Teleconsultation MOs data from server to device.",
+        "tags": [
+          "Teleconsult MOs"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "facility teleconsult MOs received",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "facility_medical_officers": {
+                  "$ref": "#/definitions/facility_medical_officers"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      }
+    },
+    "/teleconsultations/sync": {
+      "post": {
+        "summary": "Syncs Teleconsultations from device to server.",
+        "tags": [
+          "Teleconsultations"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "HTTP_X_USER_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "HTTP_X_FACILITY_ID",
+            "in": "header",
+            "type": "uuid"
+          },
+          {
+            "name": "teleconsultations",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "teleconsultations": {
+                  "$ref": "#/definitions/teleconsultations"
+                }
+              },
+              "required": [
+                "teleconsultations"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "teleconsultations created"
+          },
+          "403": {
+            "description": "user is not allowed to sync"
+          }
+        }
+      }
+    },
+    "/users/find": {
+      "post": {
+        "summary": "Find a existing user",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "phone_number",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "phone_number": {
+                  "$ref": "#/definitions/non_empty_string"
+                }
+              },
+              "required": [
+                "phone_number"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user is found",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/definitions/find_user"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "user is not found"
+          }
+        }
+      }
+    },
+    "/users/activate": {
+      "post": {
+        "summary": "Authenticate user, request OTP, and get user information",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "name": "user",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/definitions/activate_user"
+                }
+              },
+              "required": [
+                "user"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user otp is reset and new otp is sent as an sms",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/definitions/user"
+                }
+              },
+              "required": [
+                "user"
+              ]
+            }
+          },
+          "401": {
+            "description": "incorrect user id or password, authentication failed",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "errors": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "List of descriptive error strings"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "errors"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "/users/me/": {
+      "parameters": [
+        {
+          "name": "HTTP_X_USER_ID",
+          "in": "header",
+          "type": "uuid",
+          "required": true
+        },
+        {
+          "name": "HTTP_X_FACILITY_ID",
+          "in": "header",
+          "type": "uuid",
+          "required": true
+        }
+      ],
+      "get": {
+        "summary": "Fetch user information",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "access_token": [
+
+            ],
+            "user_id": [
+
+            ],
+            "facility_id": [
+
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "returns user information",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "$ref": "#/definitions/user"
+                }
+              },
+              "required": [
+                "user"
+              ]
+            }
+          },
+          "401": {
+            "description": "authentication failed"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "error": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Id of the record with errors"
+        },
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of json schema error strings describing validation errors"
+        },
+        "field_with_error": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "errors": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/error"
+      }
+    },
+    "process_token": {
+      "name": "process_token",
+      "type": "string",
+      "format": "byte",
+      "description": "Token containing all the information needed to process batch requests from the user"
+    },
+    "activate_user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "password": {
+          "$ref": "#/definitions/non_empty_string"
+        }
+      },
+      "required": [
+        "id",
+        "password"
+      ]
+    },
+    "address": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "street_address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "village_or_colony": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "zone": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "district": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "app_user_capabilities": {
+      "type": "object",
+      "properties": {
+        "can_teleconsult": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no"
+          ]
+        }
+      }
+    },
+    "appointment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "creation_facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "scheduled_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "scheduled",
+            "cancelled",
+            "visited"
+          ]
+        },
+        "cancel_reason": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "enum": [
+            "not_responding",
+            "moved",
+            "dead",
+            "invalid_phone_number",
+            "public_hospital_transfer",
+            "moved_to_private",
+            "other",
+            null
+          ]
+        },
+        "remind_on": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "agreed_to_visit": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "appointment_type": {
+          "type": "string",
+          "enum": [
+            "manual",
+            "automatic"
+          ]
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "patient_id",
+        "facility_id",
+        "scheduled_date",
+        "status",
+        "created_at",
+        "updated_at",
+        "appointment_type"
+      ]
+    },
+    "appointments": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/appointment"
+      }
+    },
+    "bcrypt_password": {
+      "type": "string",
+      "pattern": "^\\$[0-9a-z]{2}\\$[0-9]{2}\\$[A-Za-z0-9\\.\\/]{53}$",
+      "description": "Bcrypt password digest"
+    },
+    "blood_pressure": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "systolic": {
+          "type": "integer"
+        },
+        "diastolic": {
+          "type": "integer"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "recorded_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "user_id": {
+          "$ref": "#/definitions/uuid"
+        }
+      },
+      "required": [
+        "systolic",
+        "diastolic",
+        "created_at",
+        "updated_at",
+        "patient_id",
+        "facility_id",
+        "user_id"
+      ]
+    },
+    "blood_pressures": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/blood_pressure"
+      }
+    },
+    "blood_sugar": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "blood_sugar_type": {
+          "type": "string",
+          "enum": [
+            "random",
+            "post_prandial",
+            "fasting",
+            "hba1c"
+          ]
+        },
+        "blood_sugar_value": {
+          "type": "number"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "recorded_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "user_id": {
+          "$ref": "#/definitions/uuid"
+        }
+      },
+      "required": [
+        "id",
+        "blood_sugar_type",
+        "blood_sugar_value",
+        "created_at",
+        "updated_at",
+        "patient_id",
+        "facility_id",
+        "user_id"
+      ]
+    },
+    "blood_sugars": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/blood_sugar"
+      }
+    },
+    "call_result": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "user_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "appointment_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "remove_reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "not_responding",
+            "moved",
+            "dead",
+            "invalid_phone_number",
+            "public_hospital_transfer",
+            "moved_to_private",
+            "other",
+            null
+          ]
+        },
+        "result_type": {
+          "type": "string",
+          "enum": [
+            "agreed_to_visit",
+            "removed_from_overdue_list",
+            "remind_to_call_later"
+          ]
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "user_id",
+        "appointment_id",
+        "result_type",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "call_results": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/call_result"
+      }
+    },
+    "facility_medical_officer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "medical_officers": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/uuid"
+              },
+              "full_name": {
+                "$ref": "#/definitions/non_empty_string"
+              },
+              "teleconsultation_phone_number": {
+                "$ref": "#/definitions/non_empty_string"
+              }
+            }
+          }
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        }
+      }
+    },
+    "facility_medical_officers": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/facility_medical_officer"
+      }
+    },
+    "find_user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "sync_approval_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "login_patient": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "access_token": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "passport": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/uuid"
+            },
+            "shortcode": {
+              "$ref": "#/definitions/non_empty_string"
+            }
+          }
+        }
+      }
+    },
+    "lookup_patient": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "male",
+            "female",
+            "transgender"
+          ]
+        },
+        "full_name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "dead",
+            "migrated",
+            "unresponsive",
+            "inactive"
+          ]
+        },
+        "date_of_birth": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date"
+        },
+        "age": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "When age is present, age_updated_at must be present as well."
+        },
+        "age_updated_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "recorded_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "registration_facility_id": {
+          "$ref": "#/definitions/nullable_uuid"
+        },
+        "assigned_facility_id": {
+          "$ref": "#/definitions/nullable_uuid"
+        },
+        "reminder_consent": {
+          "type": "string",
+          "enum": [
+            "granted",
+            "denied"
+          ]
+        },
+        "deleted_reason": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "enum": [
+            "duplicate",
+            "unknown",
+            "accidental_registration",
+            null
+          ]
+        },
+        "address": {
+          "$ref": "#/definitions/address"
+        },
+        "phone_numbers": {
+          "$ref": "#/definitions/phone_numbers"
+        },
+        "business_identifiers": {
+          "$ref": "#/definitions/patient_business_identifiers"
+        },
+        "appointments": {
+          "$ref": "#/definitions/appointments"
+        },
+        "blood_pressures": {
+          "$ref": "#/definitions/blood_pressures"
+        },
+        "blood_sugars": {
+          "$ref": "#/definitions/blood_sugars"
+        },
+        "medical_history": {
+          "$ref": "#/definitions/nullable_medical_history"
+        },
+        "prescription_drugs": {
+          "$ref": "#/definitions/prescription_drugs"
+        },
+        "retention": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "temporary",
+                "permanent"
+              ],
+              "description": "This enum might have more values in the future."
+            },
+            "duration_seconds": {
+              "type": "integer",
+              "description": "This key is only present in the response when the retention type is temporary."
+            }
+          }
+        }
+      },
+      "required": [
+        "appointments",
+        "blood_pressures",
+        "blood_sugars",
+        "medical_history",
+        "prescription_drugs",
+        "retention"
+      ],
+      "description": "Sync a single patient to a device"
+    },
+    "lookup_patients": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/lookup_patient"
+      }
+    },
+    "nullable_medical_history": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "prior_heart_attack": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "prior_stroke": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "chronic_kidney_disease": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "receiving_treatment_for_hypertension": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "receiving_treatment_for_diabetes": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "diabetes": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "hypertension": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "diagnosed_with_hypertension": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no",
+            "unknown"
+          ]
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "patient_id",
+        "prior_heart_attack",
+        "prior_stroke",
+        "chronic_kidney_disease",
+        "receiving_treatment_for_hypertension",
+        "diabetes",
+        "diagnosed_with_hypertension",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "medical_officer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "full_name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "teleconsultation_phone_number": {
+          "$ref": "#/definitions/non_empty_string"
+        }
+      }
+    },
+    "medication": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "hypertension_ccb",
+            "hypertension_arb",
+            "hypertension_diuretic",
+            "hypertension_ace",
+            "hypertension_other",
+            "diabetes",
+            "other",
+            null
+          ]
+        },
+        "frequency": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "one_per_day",
+            "two_per_day",
+            "three_per_day",
+            "four_per_day",
+            null
+          ]
+        },
+        "composition": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dosage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rxnorm_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "protocol": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "common": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "medications": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/medication"
+      }
+    },
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 1,
+      "description": "This string should not be empty."
+    },
+    "nullable_timestamp": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Timestamp with millisecond precision."
+    },
+    "nullable_uuid": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "pattern": "[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}"
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "full_name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "age": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "male",
+            "female",
+            "transgender"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "dead",
+            "migrated",
+            "unresponsive",
+            "inactive"
+          ]
+        },
+        "recorded_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "reminder_consent": {
+          "type": "string",
+          "enum": [
+            "granted",
+            "denied"
+          ]
+        },
+        "phone_numbers": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/uuid"
+              },
+              "number": {
+                "$ref": "#/definitions/non_empty_string"
+              }
+            }
+          }
+        },
+        "address": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/uuid"
+            },
+            "street_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "village_or_colony": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "district": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "zone": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "country": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pin": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "registration_facility": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "$ref": "#/definitions/uuid"
+            },
+            "name": {
+              "$ref": "#/definitions/non_empty_string"
+            },
+            "street_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "village_or_colony": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "district": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "state": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "country": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pin": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "medical_history": {
+          "type": "object",
+          "properties": {
+            "chronic_kidney_disease": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "diabetes": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "hypertension": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "prior_heart_attack": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "prior_stroke": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "blood_pressures": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "systolic": {
+                "type": "integer"
+              },
+              "diastolic": {
+                "type": "integer"
+              },
+              "recorded_at": {
+                "$ref": "#/definitions/timestamp"
+              },
+              "facility": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/definitions/uuid"
+                  },
+                  "name": {
+                    "$ref": "#/definitions/non_empty_string"
+                  },
+                  "street_address": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "village_or_colony": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "state": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pin": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "blood_sugars": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "blood_sugar_value": {
+                "type": "number"
+              },
+              "blood_sugar_type": {
+                "type": "string",
+                "enum": [
+                  "random",
+                  "post_prandial",
+                  "fasting",
+                  "hba1c"
+                ]
+              },
+              "recorded_at": {
+                "$ref": "#/definitions/timestamp"
+              },
+              "facility": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/definitions/uuid"
+                  },
+                  "name": {
+                    "$ref": "#/definitions/non_empty_string"
+                  },
+                  "street_address": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "village_or_colony": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "state": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pin": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "appointments": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "scheduled_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "cancelled",
+                  "visited"
+                ]
+              },
+              "facility": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "$ref": "#/definitions/uuid"
+                  },
+                  "name": {
+                    "$ref": "#/definitions/non_empty_string"
+                  },
+                  "street_address": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "village_or_colony": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "state": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "country": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pin": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "medications": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "#/definitions/non_empty_string"
+              },
+              "dosage": {
+                "type": "string"
+              },
+              "rxnorm_code": {
+                "type": "string"
+              },
+              "is_protocol_drug": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "patient_business_identifier": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "identifier_type": {
+          "type": "string",
+          "enum": [
+            "simple_bp_passport",
+            "bangladesh_national_id",
+            "sri_lanka_national_id",
+            "sri_lanka_personal_health_number",
+            "ethiopia_medical_record",
+            "india_national_health_id"
+          ]
+        },
+        "metadata_version": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "updated_at",
+        "identifier",
+        "identifier_type"
+      ]
+    },
+    "patient_business_identifiers": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/patient_business_identifier"
+      }
+    },
+    "phone_number": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "number": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "phone_type": {
+          "type": "string",
+          "enum": [
+            "mobile",
+            "landline"
+          ]
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "updated_at",
+        "number"
+      ]
+    },
+    "phone_numbers": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/phone_number"
+      }
+    },
+    "prescription_drug": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "dosage": {
+          "type": "string"
+        },
+        "rxnorm_code": {
+          "type": "string"
+        },
+        "is_protocol_drug": {
+          "type": "boolean"
+        },
+        "is_deleted": {
+          "type": "boolean"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "frequency": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "OD",
+            "BD",
+            "QDS",
+            "TDS",
+            null
+          ]
+        },
+        "duration_in_days": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "teleconsultation_id": {
+          "$ref": "#/definitions/nullable_uuid"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "updated_at",
+        "name",
+        "is_protocol_drug",
+        "is_deleted",
+        "patient_id",
+        "facility_id"
+      ]
+    },
+    "prescription_drugs": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/prescription_drug"
+      }
+    },
+    "teleconsultation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "patient_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "medical_officer_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "request": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "requester_id": {
+              "$ref": "#/definitions/uuid"
+            },
+            "facility_id": {
+              "$ref": "#/definitions/uuid"
+            },
+            "requested_at": {
+              "$ref": "#/definitions/timestamp"
+            },
+            "requester_completion_status": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "yes",
+                "no",
+                "waiting",
+                null
+              ]
+            }
+          }
+        },
+        "record": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "recorded_at": {
+              "$ref": "#/definitions/timestamp"
+            },
+            "teleconsultation_type": {
+              "type": "string",
+              "enum": [
+                "audio",
+                "video",
+                "message"
+              ]
+            },
+            "patient_took_medicines": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ]
+            },
+            "patient_consented": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ]
+            },
+            "medical_officer_number": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        }
+      }
+    },
+    "teleconsultations": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "$ref": "#/definitions/teleconsultation"
+      }
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp with millisecond precision."
+    },
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "deleted_at": {
+          "$ref": "#/definitions/nullable_timestamp"
+        },
+        "created_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "updated_at": {
+          "$ref": "#/definitions/timestamp"
+        },
+        "full_name": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "phone_number": {
+          "$ref": "#/definitions/non_empty_string"
+        },
+        "password_digest": {
+          "$ref": "#/definitions/bcrypt_password"
+        },
+        "registration_facility_id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "sync_approval_status": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sync_approval_status_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "capabilities": {
+          "type": "object",
+          "properties": {
+            "can_teleconsult": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "no"
+              ]
+            }
+          }
+        },
+        "teleconsultation_phone_number": {
+          "$ref": "#/definitions/non_empty_string"
+        }
+      },
+      "required": [
+        "id",
+        "created_at",
+        "updated_at",
+        "full_name",
+        "phone_number",
+        "password_digest",
+        "registration_facility_id"
+      ]
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}"
+    }
+  },
+  "securityDefinitions": {
+    "access_token": {
+      "type": "http",
+      "scheme": "bearer"
+    },
+    "user_id": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-USER-ID"
+    },
+    "facility_id": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-FACILITY-ID"
+    },
+    "patient_id": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-PATIENT-ID"
+    }
+  }
+}

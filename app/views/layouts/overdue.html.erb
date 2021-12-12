@@ -1,0 +1,48 @@
+<% content_for(:content) do %>
+  <h1>
+    Overdue patients
+  </h1>
+  <p>
+    Patients that are overdue for a follow-up visit<% if current_admin.accessible_facilities(:manage_overdue_list) %>. If you select a facility, you can download a patient list.<% end %>
+  </p>
+  <%= render('shared/paginate_and_filter_by_facility',
+             form_url: appointments_path,
+             current_admin: current_admin,
+             per_page: @per_page,
+             form_id: "search-filters",
+             districts: @districts,
+             facilities: @facilities,
+             selected_district: @selected_district,
+             selected_facility: @selected_facility) %>
+  <section class="secondary-nav-filters">
+    <h4 class="mt-2">
+      Filters
+    </h4>
+    <%= form_tag appointments_path, method: :get, id: "search-filters" do %>
+      <% PatientSummaryQuery.filters.each do |filter, label| %>
+        <label for=<%= "search-#{filter}" %>>
+          <% checked = @search_filters.include?(filter) %>
+          <%= check_box_tag("search_filters[]", filter, checked, { id: "search-#{filter}" } ) %>
+          <%= label %>
+        </label>
+      <% end %>
+      <label>
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+          Apply filters
+        </button>
+      </label>
+    <% end %>
+  </section>
+  <% if @selected_facility && @patient_summaries.present? && current_admin.accessible_facilities(:manage_overdue_list).include?(@selected_facility) %>
+    <section class="mb-5">
+      <h4>
+        Download
+      </h4>
+      <%= link_to(@index_params.merge(format: "csv"), class: "", data: { confirm: I18n.t('admin.phi_download_alert') }) do %>
+        Download results
+      <% end %>
+    </section>
+  <% end %>
+  <%= yield %>
+<% end %>
+<%= render template: "layouts/application" %>

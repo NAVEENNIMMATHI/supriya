@@ -1,0 +1,57 @@
+<div class="card">
+  <div class="snapshot-title">
+    <%= t('dashboard.graphics.graphics_title_html',
+          current_quarter_string: quarter_string(date),
+          previous_quarter_string: quarter_string(date.prev_quarter),
+          patients_in_previous_quarter: current_cohort_analytics.dig(:cohort_patients, :total) || current_cohort_analytics[:registered]
+        ) %>
+  </div>
+
+  <div class="split-row">
+    <%
+      totals = current_cohort_analytics.slice(:defaulted, :controlled, :uncontrolled).map do |k, v|
+        [k, v[:total]]
+      end.to_h.with_indifferent_access
+
+      analytics_percentages = calculate_percentage_for_analytics(totals)
+    %>
+    <table class="split-bars" style="height: 180px;">
+
+      <tr>
+        <td class="bar bar-3" style="height: <%= analytics_percentages[:controlled]%>%">
+          <%= percentage_string(analytics_percentages[:controlled]) %>
+        </td>
+        <td class="snapshot-controlled snapshot-key">
+          <div>
+            <%= current_cohort_analytics.dig(:controlled, :total) %>
+            <%= t('dashboard.graphics.patients_controlled_in_quarter_html') %> 140/90
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="bar bar-2" style="height: <%= analytics_percentages[:uncontrolled] %>%;">
+          <%= percentage_string(analytics_percentages[:uncontrolled]) %>
+        </td>
+        <td class="snapshot-uncontrolled snapshot-key">
+          <div>
+            <%= current_cohort_analytics.dig(:uncontrolled, :total) %>
+            <%= t('dashboard.graphics.patients_uncontrolled_in_quarter_html') %> 140/90
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="bar bar-1" style="height: <%= analytics_percentages[:defaulted] %>%;">
+          <%= percentage_string(analytics_percentages[:defaulted]) %>
+        </td>
+        <td class="snapshot-didntattend snapshot-key">
+          <div>
+            <%= current_cohort_analytics.dig(:defaulted, :total) %>
+            <%= t('dashboard.graphics.patients_defaulted_in_quarter_html') %>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

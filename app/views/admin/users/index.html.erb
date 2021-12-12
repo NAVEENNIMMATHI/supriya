@@ -1,0 +1,67 @@
+<div class="page-header">
+  <h1 class="page-title">Users</h1>
+</div>
+
+<%= render 'shared/paginate_and_filter_by_district',
+           form_url: admin_users_path,
+           current_admin: current_admin,
+           district: @district,
+           per_page: @per_page,
+           scope_namespace: current_admin.accessible_facilities(:manage) %>
+
+<% if @users.exists? %>
+  <% if searching? %>
+    <span><%= search_entries_info(@users) %></span>
+  <% end %>
+
+  <% @users.group_by(&:facility).each do |facility, users| %>
+    <h3 class="mt-5" id="facility_name"><%= facility.label_with_district %></h3>
+    <% users.sort_by(&:full_name).each do |user| %>
+      <div class="card" name="<%= facility.name %>">
+        <div class="row" name="<%= user.full_name %>">
+          <div class="col-md-7">
+            <h5 class="mb-1">
+              <%= link_to user.full_name, [:admin, user] %>
+              <% unless user.sync_approval_status == 'allowed' %>
+                <span class="ml-2 badge badge-pill badge-primary <%= user.sync_approval_status %>"><%= user.sync_approval_status&.capitalize %></span>
+              <% end %>
+            </h5>
+            <div>
+              <% unless user.sync_approval_status == 'allowed' %>
+                <%= user.sync_approval_status_reason %>.
+              <% end %>
+
+              <% if user.registration_facility.present? %>
+                Registration facility:
+                <% facility = user.registration_facility %>
+                <%= link_to facility.label_with_district, [:admin, facility.facility_group, facility], class: "text-dark" %>
+              <% end %>
+            </div>
+            <div class="mt-2">
+              <a href="tel:<%= user.phone_number %>" class="btn btn-sm btn-outline-primary btn-phone"><i class="fas fa-phone"></i> <%= user.phone_number %>
+              </a>
+            </div>
+          </div>
+          <div class="col-md-5 text-right">
+            <% unless user.sync_approval_status == 'allowed' %>
+              <%= link_to 'Allow', admin_user_enable_access_path(user), method: :put, data: {confirm: I18n.t('admin.enable_access_alert')}, class: 'btn btn-sm btn-outline-success' %>
+            <% end %>
+
+            <% unless user.sync_approval_status == 'denied' %>
+              <%= link_to 'Deny', '#deny-access-modal-' + user.id, 'data-toggle' => 'modal', class: 'btn btn-sm btn-outline-danger' %>
+            <% end %>
+
+            <%= link_to 'Edit', edit_admin_user_path(user), class: 'btn btn-sm btn-outline-primary' %>
+
+            <%= render partial: "deny_access_modal", locals: {user: user} %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
+<% else %>
+  <%= render "shared/no_search_results",
+      message: "No results for '#{content_tag(:strong, search_query)}'" %>
+<% end %>
+
+<%= paginate(@users) %>

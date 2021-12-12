@@ -1,0 +1,46 @@
+en_ET:
+  facility_group: "zone"
+  region_type:
+    state: region
+    district: zone
+    block: woreda
+  helpers:
+    label:
+      facility:
+        name: "Name"
+        facility_type: "Facility Type *"
+        size: "Size *"
+        street_address: "House and road number"
+        village_or_colony: "Kebele"
+        zone: "Woreda *"
+        district: "Zone *"
+        state: "Region *"
+        country: "Country *"
+        pin: "Postal Code"
+      facility_group:
+        state: "Region"
+      address:
+        street_address: "House and street number"
+        village_or_colony: "Kebele"
+        zone: "Woreda *"
+        district: "Zone"
+        state: "Region *"
+        country: "Country *"
+        pin: "Postal Code"
+      drug:
+        frequency:
+          one_per_day: "PD"
+          two_per_day: "BID"
+          three_per_day: "TID"
+          four_per_day: "QID"
+    submit:
+      facility:
+        create: "Save facility"
+        update: "Save facility"
+  activerecord:
+    facility:
+      facility_size:
+        community: "Health post"
+        small: "Health center"
+        medium: "Primary hospital"
+        large: "General/specialized hospital"

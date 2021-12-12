@@ -1,0 +1,53 @@
+/*****************
+Navigation
+*****************/
+
+nav.breadcrumb {
+    background: transparent;
+    padding-left: 0;
+    margin: 0 0 8px 0;
+}
+
+nav.breadcrumb .arrow,
+nav.breadcrumb i {
+   font-weight: 900;
+   color: $grey-mid;
+    margin: 0 6px;
+    font-size: 85%;
+    top: 5px;
+    position: relative;
+}
+
+form.edit_email_authentication .invalid-feedback {
+    font-size: 100%;
+    font-weight: bold;
+}
+
+nav a.nav-link { color: $grey-darkest !important; }
+nav a.nav-link:hover { color: $grey-mid !important; }
+
+
+nav.navbar-development a.nav-link { color: $grey-darkest !important; }
+nav.navbar-development a.nav-link.active { color: $blue !important; }
+nav.navbar-development a.nav-link:hover { color: $grey-mid !important; }
+nav.navbar-development { box-shadow: none; }
+
+nav.navbar-qa a.nav-link { color: $grey-darkest !important; }
+nav.navbar-qa a.nav-link.active { color: $green !important; }
+nav.navbar-qa a.nav-link:hover { color: $grey-mid !important; }
+nav.navbar-qa { box-shadow: none; }
+
+nav.navbar-sandbox a.nav-link { color: $grey-darkest !important; }
+nav.navbar-sandbox a.nav-link.active { color: #5300E0 !important; }
+nav.navbar-sandbox a.nav-link:hover { color: $grey-mid !important; }
+nav.navbar-sandbox { box-shadow: none; }
+
+nav.navbar-demo a.nav-link { color: $grey-darkest !important; }
+nav.navbar-demo a.nav-link.active { color: #977600 !important; }
+nav.navbar-demo a.nav-link:hover { color: $grey-mid !important; }
+nav.navbar-demo { box-shadow: none; }
+
+nav.navbar-production a.nav-link { color: $grey-darkest !important; }
+nav.navbar-production a.nav-link.active { color: $red !important; }
+nav.navbar-production a.nav-link:hover { color: $grey-mid !important; }
+nav.navbar-production { box-shadow: none; }

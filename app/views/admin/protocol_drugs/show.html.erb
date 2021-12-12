@@ -1,0 +1,21 @@
+<p>
+  <strong>Name:</strong>
+  <%= @protocol_drug.name %>
+</p>
+
+<p>
+  <strong>Dosage:</strong>
+  <%= @protocol_drug.dosage %>
+</p>
+
+<p>
+  <strong>RxNorm code:</strong>
+  <%= @protocol_drug.rxnorm_code %>
+</p>
+
+<p>
+  <strong>Protocol:</strong>
+  <%= @protocol_drug.protocol %>
+</p>
+
+<%= link_to 'Edit', edit_protocol_drug_path(@protocol_drug) %> |
